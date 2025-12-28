@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Tuple
 from itertools import combinations
 from config.settings import (
     MAX_ROI_THRESHOLD, MIN_ROI_THRESHOLD, DEFAULT_TOTAL_INVESTMENT,
-    STAKE_ROUNDING, BOOKMAKER_OVERTIME_RULES, HIGH_RISK_COMBINATIONS,
+    ENABLE_SMART_ROUNDING, BOOKMAKER_OVERTIME_RULES, HIGH_RISK_COMBINATIONS,
     ENABLE_DRIFT_TRACKER, DRIFT_THRESHOLD_PERCENT, ENABLE_RISK_REPORTER
 )
 from src.utils.logger import setup_logger

@@ -57,17 +57,17 @@ class ArbitrageMonitor:
                 self.active_sports = SPORTS
         else:
             self.active_sports = SPORTS
-            
+        
+        self.logger.info("=" * 60)
+        self.logger.info("🚀 SPORTS ARBITRAGE MONITOR STARTED")
+        self.logger.info("=" * 60)
+        if dry_run:
+            self.logger.info("📝 DRY RUN MODE: Alerts will be logged only (no Discord)")
         self.logger.info(f"Sports: {', '.join(self.active_sports)}")
         self.logger.info(f"Peak Hours Polling: {POLL_INTERVAL_SECONDS}s")
         self.logger.info(f"Off-Peak Polling: {OFF_PEAK_POLL_INTERVAL}s")
         if duration_minutes:
-            self.logger.info(f"⏱️ Timed Run: {duration_minutes} minute
-        if dry_run:
-            self.logger.info("📝 DRY RUN MODE: Alerts will be logged only (no Discord)")
-        self.logger.info(f"Sports: {', '.join(SPORTS)}")
-        self.logger.info(f"Peak Hours Polling: {POLL_INTERVAL_SECONDS}s")
-        self.logger.info(f"Off-Peak Polling: {OFF_PEAK_POLL_INTERVAL}s")
+            self.logger.info(f"⏱️ Timed Run: {duration_minutes} minutes")
         
         # Show peak hours schedule
         from config.settings import PEAK_HOURS_SCHEDULE

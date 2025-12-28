@@ -5,6 +5,7 @@ Advanced Monitoring Modules:
 - Risk Reporter: Bookmaker terms validation
 """
 from typing import Dict, List, Optional
+from datetime import datetime
 from config.settings import (
     ENABLE_MULTIMARKET_SCAN, MULTIMARKET_MARKETS,
     BOOKMAKER_OVERTIME_RULES, ENABLE_DRIFT_TRACKER

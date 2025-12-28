@@ -14,7 +14,7 @@ ODDS_API_BASE_URL = 'https://api.the-odds-api.com/v4'
 
 # API Request Parameters
 REGIONS = ['eu', 'us']  # Global bookmakers (Unibet, William Hill, Betfair, 1xBet)
-SPORTS = ['basketball_nba', 'tennis_atp']  # Focus on 2-way markets (no draws)
+SPORTS = ['basketball_nba']  # Focus on 2-way markets - tennis_atp not available, using only NBA
 MARKETS = ['h2h']  # Head-to-head (moneyline/match winner)
 ODDS_FORMAT = 'decimal'
 
@@ -53,10 +53,7 @@ PEAK_HOURS_SCHEDULE = {
         # NBA games typically 7 PM - 11 PM ET (convert to your timezone)
         {'days': [0, 1, 2, 3, 4, 5, 6], 'start_hour': 18, 'end_hour': 23},  # 6 PM - 11 PM daily
     ],
-    'tennis_atp': [
-        # Tennis: Global tournaments (adjust to major events)
-        {'days': [0, 1, 2, 3, 4, 5, 6], 'start_hour': 9, 'end_hour': 20},  # 9 AM - 8 PM daily
-    ],
+    # Note: tennis_atp removed - API returns 404 (sport key not available)
 }
 
 # Manual Scan Configuration (Discord /scan_now command)

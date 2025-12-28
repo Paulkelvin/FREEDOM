@@ -87,6 +87,9 @@ class ArbitrageMonitor:
         Only polls during high-volume hours to conserve API credits
         Supports timed runs for GitHub Actions
         """
+        total_arbs_found = 0
+        max_arbs_before_exit = 5  # Stop early after finding 5 arbs to save credits
+        
         while self.running:
             # Check if timed run has exceeded duration
             if self.duration_minutes:
@@ -133,6 +136,15 @@ class ArbitrageMonitor:
                     for opp in opportunities:
                         self._process_opportunity(opp)
                 
+                # Track total arbs found
+                total_arbs_found += total_opportunities
+                
+                # Edge case: Stop early if we found enough arbs (save API credits)
+                if self.duration_minutes and total_arbs_found >= max_arbs_before_exit:
+                    self.logger.info(f"🎯 Found {total_arbs_found} arbitrage opportunities!")
+                    self.logger.info(f"Stopping early to conserve API credits.")
+                    break
+                
                 # Summary
                 cycle_duration = time.time() - cycle_start
                 self.logger.info(
@@ -159,6 +171,11 @@ class ArbitrageMonitor:
             List of arbitrage opportunities
         """
         opportunities = []
+        
+        # Edge case: Handle empty events (off-season or no games today)
+        if not events:
+            self.logger.info(f"ℹ️  No {sport} events scheduled today (off-season or rest day)")
+            return []
         
         self.logger.info(f"📊 Scanning {len(events)} {sport} events...")
         

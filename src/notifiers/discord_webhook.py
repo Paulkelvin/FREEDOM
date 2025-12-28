@@ -46,7 +46,7 @@ class DiscordNotifier:
             response = requests.post(
                 self.webhook_url,
                 json={'content': message},
-                timeout=10
+                timeout=10  # Fail fast if Discord is down
             )
             response.raise_for_status()
             

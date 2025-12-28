@@ -60,6 +60,12 @@ class OddsAPIClient:
                 if 'x-requests-remaining' in response.headers:
                     quota_remaining = int(response.headers['x-requests-remaining'])
                     self.logger.info(f"📊 API Quota: {self.quota_used} used | {quota_remaining} remaining")
+                    
+                    # Warn when running low on credits
+                    if quota_remaining < 50:
+                        self.logger.warning(f"⚠️ LOW API CREDITS: Only {quota_remaining} requests remaining!")
+                    if quota_remaining < 20:
+                        self.logger.error(f"🔴 CRITICAL: Only {quota_remaining} requests left this month!")
                 
                 response.raise_for_status()
                 self.requests_made += 1
@@ -70,11 +76,15 @@ class OddsAPIClient:
                 
             except requests.exceptions.HTTPError as e:
                 if response.status_code == 401:
-                    self.logger.error(f"❌ Invalid API Key. Check your .env file.")
-                    return None
+                    self.logger.error(f"❌ INVALID API KEY - Check your .env file")
+                    self.logger.error(f"Get your API key from: https://the-odds-api.com")
+                    import sys
+                    sys.exit(1)  # Stop execution - can't continue without valid key
                 elif response.status_code == 429:
-                    self.logger.warning(f"⚠️ Rate limit exceeded. Waiting {REQUEST_RETRY_DELAY}s...")
-                    time.sleep(REQUEST_RETRY_DELAY)
+                    self.logger.error(f"🚫 API RATE LIMIT EXCEEDED!")
+                    self.logger.error(f"Requests used: {self.quota_used}/{MAX_MONTHLY_REQUESTS}")
+                    self.logger.error(f"Wait until next month or upgrade your plan")
+                    return None  # Stop making requests
                 else:
                     self.logger.error(f"❌ HTTP Error {response.status_code}: {e}")
                     

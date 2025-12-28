@@ -43,7 +43,17 @@ class ArbitrageCalculator:
         Returns:
             (is_arb, roi_percentage)
         """
+        # Edge case: Protect against invalid odds (division by zero)
+        if odds_a <= 0 or odds_b <= 0:
+            self.logger.warning(f"⚠️ Invalid odds detected: {odds_a}, {odds_b} - skipping")
+            return False, 0.0
+        
         implied_total = (1 / odds_a) + (1 / odds_b)
+        
+        # Edge case: Check for zero implied total
+        if implied_total == 0:
+            self.logger.warning(f"⚠️ Zero implied total for odds: {odds_a}, {odds_b}")
+            return False, 0.0
         
         if implied_total < 1.0:
             roi = ((1 / implied_total) - 1) * 100
@@ -63,7 +73,15 @@ class ArbitrageCalculator:
         Returns:
             (is_arb, roi_percentage)
         """
+        # Edge case: Protect against invalid odds
+        if odds_1 <= 0 or odds_x <= 0 or odds_2 <= 0:
+            self.logger.warning(f"⚠️ Invalid 3-way odds: {odds_1}, {odds_x}, {odds_2}")
+            return False, 0.0
+        
         implied_total = (1 / odds_1) + (1 / odds_x) + (1 / odds_2)
+        
+        if implied_total == 0:
+            return False, 0.0
         
         if implied_total < 1.0:
             roi = ((1 / implied_total) - 1) * 100

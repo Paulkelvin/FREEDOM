@@ -93,15 +93,19 @@ class OddsAPIClient:
         self.logger.error(f"❌ Failed to fetch odds for {sport} after {max_retries} attempts")
         return None
     
-    def get_all_sports_odds(self) -> Dict[str, List[Dict]]:
+    def get_all_sports_odds(self, sports: Optional[List[str]] = None) -> Dict[str, List[Dict]]:
         """
-        Fetch odds for all configured sports
+        Fetch odds for all configured sports (or filtered list)
+        
+        Args:
+            sports: Optional list of sports to fetch (defaults to SPORTS from settings)
         
         Returns:
             Dictionary mapping sport name to list of events
         """
+        target_sports = sports or SPORTS
         all_odds = {}
-        for sport in SPORTS:
+        for sport in target_sports:
             odds = self.get_sports_odds(sport)
             if odds:
                 all_odds[sport] = odds

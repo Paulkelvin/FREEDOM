@@ -5,8 +5,9 @@ Production-ready arbitrage scanner with peak hours scheduling, safety filters, a
 import time
 import signal
 import sys
-from datetime import datetime
-from typing import Dict, List
+import argparse
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional
 
 from config.settings import POLL_INTERVAL_SECONDS, OFF_PEAK_POLL_INTERVAL, SPORTS, REQUEST_RETRY_DELAY
 from src.api.odds_client import OddsAPIClient
@@ -22,12 +23,14 @@ class ArbitrageMonitor:
     Main application orchestrator for continuous arbitrage monitoring
     """
     
-    def __init__(self, dry_run: bool = False):
+    def __init__(self, dry_run: bool = False, duration_minutes: Optional[int] = None, sport_filter: Optional[str] = None):
         """
         Initialize the arbitrage monitoring system
         
         Args:
             dry_run: If True, log opportunities but don't send Discord alerts
+            duration_minutes: If set, run for this many minutes then exit (for GitHub Actions)
+            sport_filter: If set, only scan this sport ('nba', 'tennis', or 'all')
         """
         self.logger = setup_logger()
         self.api_client = OddsAPIClient()
@@ -35,14 +38,31 @@ class ArbitrageMonitor:
         self.notifier = DiscordNotifier()
         self.dry_run = dry_run
         self.running = True
+        self.duration_minutes = duration_minutes
+        self.sport_filter = sport_filter
+        self.start_time = datetime.now()
         
         # Graceful shutdown handler
         signal.signal(signal.SIGINT, self._shutdown_handler)
         signal.signal(signal.SIGTERM, self._shutdown_handler)
         
-        self.logger.info("=" * 60)
-        self.logger.info("🚀 SPORTS ARBITRAGE MONITOR STARTED")
-        self.logger.info("=" * 60)
+        
+        # Filter sports if specified
+        if self.sport_filter and self.sport_filter != 'all':
+            sport_map = {'nba': 'basketball_nba', 'tennis': 'tennis_atp'}
+            filtered_sport = sport_map.get(self.sport_filter, self.sport_filter)
+            if filtered_sport in SPORTS:
+                self.active_sports = [filtered_sport]
+            else:
+                self.active_sports = SPORTS
+        else:
+            self.active_sports = SPORTS
+            
+        self.logger.info(f"Sports: {', '.join(self.active_sports)}")
+        self.logger.info(f"Peak Hours Polling: {POLL_INTERVAL_SECONDS}s")
+        self.logger.info(f"Off-Peak Polling: {OFF_PEAK_POLL_INTERVAL}s")
+        if duration_minutes:
+            self.logger.info(f"⏱️ Timed Run: {duration_minutes} minute
         if dry_run:
             self.logger.info("📝 DRY RUN MODE: Alerts will be logged only (no Discord)")
         self.logger.info(f"Sports: {', '.join(SPORTS)}")
@@ -65,8 +85,16 @@ class ArbitrageMonitor:
         Main monitoring loop with peak hours scheduling (Sniper Window Strategy)
         
         Only polls during high-volume hours to conserve API credits
+        Supports timed runs for GitHub Actions
         """
         while self.running:
+            # Check if timed run has exceeded duration
+            if self.duration_minutes:
+                elapsed = (datetime.now() - self.start_time).total_seconds() / 60
+                if elapsed >= self.duration_minutes:
+                    self.logger.info(f"⏱️ Timed run complete ({self.duration_minutes} minutes)")
+                    break
+            
             cycle_start = time.time()
             
             try:
@@ -82,8 +110,8 @@ class ArbitrageMonitor:
                 self.logger.info(f"🔄 PEAK HOURS - Starting scan at {datetime.now().strftime('%H:%M:%S')}")
                 self.logger.info(f"   Active: {reason}")
                 
-                # Fetch odds from API for all sports
-                all_odds = self.api_client.get_all_sports_odds()
+                # Fetch odds from API for filtered sports
+                all_odds = self.api_client.get_all_sports_odds(sports=self.active_sports)
                 
                 if not all_odds:
                     self.logger.warning("⚠️ No odds data received. Waiting before retry...")
@@ -281,10 +309,29 @@ Configuration:
         help='Paper trading mode: log opportunities without sending Discord alerts'
     )
     
+    parser.add_argument(
+        '--duration',
+        type=int,
+        metavar='MINUTES',
+        help='Run for specified minutes then exit (for GitHub Actions)'
+    )
+    
+    parser.add_argument(
+        '--sport',
+        type=str,
+        choices=['all', 'nba', 'tennis'],
+        default='all',
+        help='Filter to specific sport (default: all)'
+    )
+    
     args = parser.parse_args()
     
     # Initialize and run
-    monitor = ArbitrageMonitor(dry_run=args.dry_run)
+    monitor = ArbitrageMonitor(
+        dry_run=args.dry_run,
+        duration_minutes=args.duration,
+        sport_filter=args.sport
+    )
     monitor.run()
 
 
